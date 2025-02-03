@@ -3,8 +3,7 @@ Consider an int array of size 5 (uninitialized), you start adding items to the a
 the elements exceeds double the array size. Once finished resizing the array again to the max quantity of
 the elements present in the array.*/
 
-#include <iostream>
-#include <cstdlib>  
+#include <iostream>  
 using namespace std;
 
 void resizeArray(int*& arr, int& capacity, int newSize) { //*& Bcs the function will recive the pointer to array and since pointer needs to be modified , we do this in case of resizing
