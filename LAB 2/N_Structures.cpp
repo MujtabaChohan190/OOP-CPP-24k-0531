@@ -12,7 +12,7 @@ int main(){
     int n;
     cout<<"Enter number of students "<<endl;
     cin>>n;
-    struct student student[n]; //Array of student structure object
+    struct student student[n];  Declares an array student of n structures.
     for (int i = 0; i < n; i++)
     { 
         cout<<"Enter Name of Student: "<<i+1<<endl;
