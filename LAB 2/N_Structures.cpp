@@ -1,3 +1,9 @@
+/*Task 5:
+Write a program that creates N structures. Inside each struct are two entities, id and name. You are
+required to first sort this structure first via ID then via the first character of the name in ascending order.
+Print all the struct data in both formations.*/
+
+
 #include<iostream>
 #include<algorithm>
 #include <string>
