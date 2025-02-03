@@ -1,28 +1,31 @@
 #include <iostream>
-#include <string>
+#include <cstring>  // For strcpy 
 
 using namespace std;
 
+// Define Employee structure (nested inside Organization)
 struct Employee {
     int employee_id;
-    string name;
+    char name[50];  // Using char array for demonstration (string can be used)
     double salary;
 };
 
+// Define Organization structure (contains Employee)
 struct Organization {
-    string organisation_name;
-    string organisation_number;
-    Employee emp;
+    char organisation_name[50];
+    char organisation_number[20];
+    Employee emp;  // Nested structure
 };
 
 int main() {
-    Organization org;
+    Organization org;  // Structure variable
 
     // Assigning values
-    org.organisation_name = "NU-Fast";
-    org.organisation_number = "NUFAST123ABC";
+    strcpy(org.organisation_name, "NU-Fast");
+    strcpy(org.organisation_number, "NUFAST123ABC");
+
     org.emp.employee_id = 127;
-    org.emp.name = "Linus Sebastian";
+    strcpy(org.emp.name, "Linus Sebastian");
     org.emp.salary = 400000;
 
     // Display output
