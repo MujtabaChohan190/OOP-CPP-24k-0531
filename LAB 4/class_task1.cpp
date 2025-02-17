@@ -23,58 +23,54 @@ sure to print it as well.*/
 using namespace std;
 
 class Matrix {
-    int rows;
-    int cols;
-    vector<vector<double>> matrix;
+    int *numRows;
+    int numCols;
+    vector<vector<int>> mat;
 
 public:
-    Matrix() : rows(0), cols(0), matrix(0, vector<double>(0, 0)) {}
+    Matrix(int rows, int cols) : numRows(new int(rows)), numCols(cols), mat(*numRows, vector<int>(numCols, 0)) {}
 
-    Matrix(int r, int c) : rows(r), cols(c), matrix(r, vector<double>(c, 0)) {}
+    Matrix() : numRows(nullptr), numCols(0), mat(0, vector<int>(0, 0)) {}
 
-    Matrix(const Matrix &other) : rows(other.rows), cols(other.cols), matrix(other.matrix) {}
-
-    Matrix(Matrix &&other) noexcept : rows(other.rows), cols(other.cols), matrix(move(other.matrix)) {
-        other.rows = 0;
-        other.cols = 0;
+    Matrix(const Matrix &other) {
+        numRows = new int(*other.numRows);
+        numCols = other.numCols;
+        mat = other.mat;
     }
 
-    ~Matrix() {}
-
-    int getRows() const {
-        return rows;
+    Matrix(Matrix &&other) noexcept : numRows(other.numRows), numCols(other.numCols), mat(move(other.mat)) {
+        other.numRows = nullptr;
+        other.numCols = 0;
     }
 
-    int getCols() const {
-        return cols;
+    ~Matrix() { delete numRows; }
+
+    int &at(int row, int col) {
+        return mat[row][col];
     }
 
-    double &at(int r, int c) {
-        return matrix[r][c];
-    }
-
-    void fill(double value) {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                matrix[i][j] = value;
-            }
-        }
+    void fill(int value) {
+        for (int i = 0; i < *numRows; i++)
+            for (int j = 0; j < numCols; j++)
+                mat[i][j] = value;
     }
 
     Matrix transpose() {
-        Matrix transposed(cols, rows);
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                transposed.matrix[j][i] = matrix[i][j];
-            }
-        }
+        Matrix transposed(numCols, *numRows);
+        for (int i = 0; i < *numRows; i++)
+            for (int j = 0; j < numCols; j++)
+                transposed.mat[j][i] = mat[i][j];
         return transposed;
     }
 
     void print() const {
-        for (const auto &row : matrix) {
-            for (double value : row) {
-                cout << value << " ";
+        if (!numRows || *numRows == 0) {
+            cout << "Empty Matrix" << endl;
+            return;
+        }
+        for (int i = 0; i < *numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                cout << mat[i][j] << " ";
             }
             cout << endl;
         }
@@ -82,17 +78,24 @@ public:
 };
 
 int main() {
-    Matrix mtx(3, 3); 
-    mtx.fill(5.5); 
+    Matrix matrix1(3, 3);
+    matrix1.fill(5);
+    matrix1.at(1, 1) = 10;
 
-    mtx.at(1, 1) = 10;
+    cout << "Original Matrix:" << endl;
+    matrix1.print();
 
-    cout << "Original Matrix:\n";
-    mtx.print();
+    Matrix matrix2(matrix1);
+    cout << "Matrix 2 (Copied):" << endl;
+    matrix2.print();
 
-    Matrix transposedMtx = mtx.transpose();
-    cout << "Transposed Matrix:\n";
-    transposedMtx.print();
+    Matrix matrix3 = move(matrix1);
+    cout << "Matrix 3 (Moved):" << endl;
+    matrix3.print();
+
+    Matrix transposedMatrix = matrix2.transpose();
+    cout << "Transposed Matrix:" << endl;
+    transposedMatrix.print();
 
     return 0;
 }
