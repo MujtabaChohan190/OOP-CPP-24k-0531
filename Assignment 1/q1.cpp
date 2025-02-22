@@ -33,7 +33,6 @@ advice to improve their performance.*/
 
 
 #include <iostream>
-#include <vector>
 using namespace std;
 
 class Skill {
@@ -61,23 +60,39 @@ public:
 
 class Sport {
 private:
-    int sportID;
-    string name;
-    string description;
-    vector<Skill> requiredSkills;
+    int sportID;        
+    string name;          
+    string description;   
+    Skill** requiredSkills; 
+    // Pointer to an array of Skill pointers - using skill* requiredskills would mean that reqskills is a pointer to a single skill object not an array
 
 public:
-    Sport(int id, string sportName, string desc) : sportID(id), name(sportName), description(desc) {}
+    Sport(int id, string sportName, string desc) : sportID(id), name(sportName), description(desc) {
+    requiredSkills = new Skill*[10];// Allocating space for 10 skills pointers - here we are allocating memory for an array of pointers to skill object
+    for (int i = 0; i < 10; i++) requiredSkills[i] = nullptr;
 
-    void addSkill(Skill s) {
-        requiredSkills.push_back(s);
-        cout << "Skill added to " << name << ".\n";
     }
 
-    void removeSkill(int skillID) {
-        for (size_t i = 0; i < requiredSkills.size(); i++) {
-            if (requiredSkills[i].getSkillID() == skillID) {
-                requiredSkills.erase(requiredSkills.begin() + i);
+    
+    ~Sport() {
+        delete[] requiredSkills; //Destructor is essentially if you dynamically allocated the memory
+    }
+    
+    void addSkill(Skill* s) {  //the parameter  skill* s is a pointer to skill object . this means that when calling the function we are passing the address of the skill object instead of copying the entire object 
+        for (int i = 0; i < 10; i++) { 
+            if (requiredSkills[i] == nullptr) { 
+                requiredSkills[i] = s; //since requiredarray element  is empty , we assign the address of skill object to requiredskill element 
+                cout << "Skill added to " << name << ".\n";
+                return;
+            }
+        }
+        cout << "No space to add more skills to " << name << ".\n";
+    }
+
+    void removeSkill(Skill* skillPtr) {
+        for (int i = 0; i < 10; i++) {
+            if (requiredSkills[i] == skillPtr) { // Compare addresses directly
+                requiredSkills[i] = nullptr;
                 cout << "Skill removed from " << name << ".\n";
                 return;
             }
@@ -85,31 +100,45 @@ public:
         cout << "Skill not found in " << name << ".\n";
     }
 
-    string getName() {  // Added getter method
+    string getName() {
         return name;
     }
 };
 
-class Mentor; // Forward declaration
+//Mentor and student class functions are dependent on each other so there is circular dependency , hence we use forward declaration.
+class Mentor; // Forward declaration - Declares Mentor before Student because Student references Mentor
 
 class Student {
 private:
     int studentID;
     string name;
     int age;
-    vector<Sport> sportsInterests;
-    Mentor* mentorAssigned;
+    Sport** sportsInterests;  // Pointer to an array of sport pointers - it represents multiple sports student is interested in
+    Mentor* mentorAssigned;   // Pointer to assigned Mentor -  it represents a single mentor assigned to a student
 
 public:
-    Student(int id, string studentName, int studentAge) : studentID(id), name(studentName), age(studentAge), mentorAssigned(nullptr) {}
+    Student(int id, string studentName, int studentAge) : studentID(id), name(studentName), age(studentAge), mentorAssigned(nullptr) {
+        sportsInterests = new Sport*[10]; 
+        for (int i = 0; i < 10; i++) sportsInterests[i] = nullptr;
+    }
+
+    ~Student() {
+        delete[] sportsInterests;
+    }
 
     void registerForMentorship(Mentor* m);
 
     void viewMentorDetails();
 
-    void updateSportsInterest(Sport s) {
-        sportsInterests.push_back(s);
-        cout << name << " has added " << s.getName() << " to their interests.\n"; // Now s.getName() works
+    void updateSportsInterest(Sport* s) {
+        for (int i = 0; i < 10; i++) {
+            if (sportsInterests[i] == nullptr) {
+                sportsInterests[i] = s;
+                cout << name << " has added " << s->getName() << " to their interests.\n";
+                return; // it helps to exit the function , otherwise the function will contiue executing even after a particular sport is added for student
+            }
+        }
+        cout << name << " cannot add more sports.\n";
     }
 
     string getName() {
@@ -121,26 +150,42 @@ class Mentor {
 private:
     int mentorID;
     string name;
-    vector<string> sportsExpertise;
+    string* sportsExpertise;
+    int expertiseCount;
     int maxLearners;
-    vector<Student*> assignedLearners;
+    Student** assignedLearners;
 
 public:
-    Mentor(int id, string mentorName, vector<string> expertise, int capacity) 
-        : mentorID(id), name(mentorName), sportsExpertise(expertise), maxLearners(capacity) {}
+    Mentor(int id, string mentorName, string expertise[], int expertiseSize, int capacity) 
+        : mentorID(id), name(mentorName), maxLearners(capacity) {
+        sportsExpertise = new string[expertiseSize];
+        expertiseCount = expertiseSize;
+        for (int i = 0; i < expertiseSize; i++) {
+            sportsExpertise[i] = expertise[i];
+        }
+        assignedLearners = new Student*[maxLearners];
+        for (int i = 0; i < maxLearners; i++) assignedLearners[i] = nullptr;
+    }
+
+    ~Mentor() {
+        delete[] sportsExpertise;
+        delete[] assignedLearners;
+    }
 
     bool assignLearner(Student* s) {
-        if (assignedLearners.size() < maxLearners) {
-            assignedLearners.push_back(s);
-            return true;
+        for (int i = 0; i < maxLearners; i++) {
+            if (assignedLearners[i] == nullptr) {
+                assignedLearners[i] = s;
+                return true;
+            }
         }
         return false;
     }
 
     void removeLearner(Student* s) {
-        for (size_t i = 0; i < assignedLearners.size(); i++) {
+        for (int i = 0; i < maxLearners; i++) {
             if (assignedLearners[i] == s) {
-                assignedLearners.erase(assignedLearners.begin() + i);
+                assignedLearners[i] = nullptr;
                 cout << s->getName() << " has been removed from " << name << "'s mentorship.\n";
                 return;
             }
@@ -150,12 +195,12 @@ public:
 
     void viewLearners() {
         cout << "Mentor " << name << "'s Students:\n";
-        for (size_t i = 0; i < assignedLearners.size(); i++) { //assignedLearners is a vector<Student*>, meaning it stores pointers to Student objects.
-            Student* s = assignedLearners[i]; // Get the pointer from the vector
-            cout << "- " << s->getName() << endl;
-        }        
+        for (int i = 0; i < maxLearners; i++) {
+            if (assignedLearners[i] != nullptr) {
+                cout << "- " << assignedLearners[i]->getName() << endl;
+            }
+        }
     }
-
 
     void provideGuidance() {
         cout << name << " is providing guidance to students.\n";
@@ -167,16 +212,22 @@ public:
 };
 
 void Student::registerForMentorship(Mentor* m) {
-    if (m->assignLearner(this)) {
-        mentorAssigned = m;
-        cout << name << " has been assigned to mentor " << m->getName() << ".\n";
-    } else {
-        cout << "Mentor " << m->getName() << " has reached the maximum number of students.\n";
+    // assigning the student to the mentor
+    bool isAssigned = m->assignLearner(this);  
+    
+    // If the mentor is full, print a message and return
+    if (!isAssigned) {  
+        cout << "Mentor " << m->getName() << " is full.\n";  
+        return;  
     }
+
+    // Otherwise, assign the mentor to the student
+    mentorAssigned = m;
+    cout << name << " is now mentored by " << m->getName() << ".\n";
 }
 
 void Student::viewMentorDetails() {
-    if (mentorAssigned) {
+    if (mentorAssigned) { //mentorAssigned is a pointer to a Mentor object. it checks if pointer is not nullptr thus ensuring that if mentor is assigned 
         cout << "Mentor Name: " << mentorAssigned->getName() << endl;
     } else {
         cout << "No mentor assigned.\n";
@@ -190,11 +241,11 @@ int main() {
     Skill serve(1, "Serve", "Basic tennis serve technique.");
     Skill dribble(2, "Dribble", "Basic football dribbling skill.");
 
-    tennis.addSkill(serve);
-    football.addSkill(dribble);
+    tennis.addSkill(&serve);
+    football.addSkill(&dribble);
 
-    vector<string> tennisExpertise = {"Tennis"};
-    Mentor mentorAli(101, "Ali", tennisExpertise, 3);
+    string tennisExpertise[] = {"Tennis"};
+    Mentor mentorAli(101, "Ali", tennisExpertise, 1, 3);
 
     Student saad(201, "Saad", 20);
     Student ahmed(202, "Ahmed", 21);
@@ -206,10 +257,11 @@ int main() {
 
     saad.viewMentorDetails();
     mentorAli.viewLearners();
-    saad.updateSportsInterest(tennis);
+    saad.updateSportsInterest(&tennis);
     mentorAli.provideGuidance();
     mentorAli.removeLearner(&saad);
     mentorAli.viewLearners();
 
     return 0;
 }
+
