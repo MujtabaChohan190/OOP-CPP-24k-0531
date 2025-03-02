@@ -70,5 +70,5 @@ int main() {
 
     cout << "Thank you for using our program!" << endl;
     Sleep(5000); // Pause before exit
-    return 0; // Natural exit, no need for system("exit")
+    return 0;
 }
