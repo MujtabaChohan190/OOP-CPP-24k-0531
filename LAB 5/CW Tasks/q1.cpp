@@ -69,7 +69,7 @@ int main() {
     myCar.startCar();
     myCar.stopCar();
 
-    cout << "Car object going out of scope, destroying Engine automatically..." << endl;
+    cout << "Car object going out of scope, destroying Engine automatically." << endl;
 
     return 0;
 }
