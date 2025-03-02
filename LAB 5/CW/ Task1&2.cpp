@@ -71,5 +71,5 @@ int main() {
 
     cout << "Car object going out of scope, destroying Engine automatically." << endl;
 
-    return 0;
+    return 0; //Engine is destroyed when Car is destroyed
 }
