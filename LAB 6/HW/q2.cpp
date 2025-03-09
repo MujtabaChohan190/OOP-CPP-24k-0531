@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 
-// Base Class: Vehicles
+
 class Vehicles {
 protected:
     double price;
@@ -11,7 +11,7 @@ public:
     virtual ~Vehicles() {}
 };
 
-// Derived Class: Car
+
 class Car : public Vehicles {
 protected:
     int seatingCapacity, numDoors;
@@ -21,7 +21,7 @@ public:
         : Vehicles(p), seatingCapacity(seatCap), numDoors(doors), fuelType(fuel) {}
 };
 
-// Derived Class: Motorcycle
+
 class Motorcycle : public Vehicles {
 protected:
     int numCylinders, numGears, numWheels;
@@ -39,10 +39,10 @@ public:
         : Car(p, seatCap, doors, fuel), modelType(model) {}
 
     void display() const override {
-        cout << "Audi Car Details:\n";
+        cout << "=== Audi Car Details ===\n";
         cout << "Price: $" << price << "\nSeating Capacity: " << seatingCapacity 
              << "\nNumber of Doors: " << numDoors << "\nFuel Type: " << fuelType 
-             << "\nModel Type: " << modelType << endl;
+             << "\nModel Type: " << modelType << "\n\n";
     }
 };
 
@@ -55,23 +55,26 @@ public:
         : Motorcycle(p, cyl, gears, wheels), makeType(make) {}
 
     void display() const override {
-        cout << "Yamaha Motorcycle Details:\n";
+        cout << "=== Yamaha Motorcycle Details ===\n";
         cout << "Price: $" << price << "\nCylinders: " << numCylinders 
              << "\nGears: " << numGears << "\nWheels: " << numWheels 
-             << "\nMake Type: " << makeType << endl;
+             << "\nMake Type: " << makeType << "\n\n";
     }
 };
 
-
 int main() {
-    // Creating an Audi object dynamically
-    Vehicles* myCar = new Audi(50000, 5, 4, "Petrol", "A6");
+    
+    Vehicles* myCar = new Audi(50000, 5, 4, "Petrol", "A6"); //A new object is created and its address is stored in  my car 
+    Vehicles* myBike = new Yamaha(15000, 2, 6, 2, "YZF-R6");
 
-    // Display details
+
     myCar->display();  
+    myBike->display();
 
     // Cleanup
     delete myCar;
+    delete myBike;
 
     return 0;
 }
+
