@@ -1,101 +1,104 @@
-/*Task - 01: Design a Matrix Class with Multiple Constructors
-Create a class Matrix that represents a 2D matrix of double values. It must handle row-major dynamic
-allocation internally.
-Details:
-
-o Constructors:
-1. Default constructor: Initializes a 0x0 matrix (rows = 0, cols = 0) or a nullptr-managed
-array.
-2. Parameterized constructor (rows, cols): Allocates a 2D matrix of size rows x cols.
-Initialize elements to 0.
-3. Copy constructor: Deep copy.
-4. Move constructor: Transfers ownership of the matrix data.
-5. Destructor: Deallocates the dynamic memory.
-o Member functions:
- getRows() and getCols() to return the dimensions.
- at(int r, int c): returns a reference to the element at row r, column c.
- fill(double value): fills the entire matrix with the provided value.
- transpose(): returns a new Matrix object that is the transpose of the current matrix. Make
-sure to print it as well.*/
-
 #include <iostream>
-#include <vector>
 using namespace std;
 
 class Matrix {
-    int *numRows;
-    int numCols;
-    vector<vector<int>> mat;
+private:
+    int rows, cols;
+    double* data; // 1D array storing elements in row-major order
 
 public:
-    Matrix(int rows, int cols) : numRows(new int(rows)), numCols(cols), mat(*numRows, vector<int>(numCols, 0)) {}
 
-    Matrix() : numRows(nullptr), numCols(0), mat(0, vector<int>(0, 0)) {}
+    Matrix() : rows(0), cols(0), data(nullptr) {}
 
-    Matrix(const Matrix &other) {
-        numRows = new int(*other.numRows);
-        numCols = other.numCols;
-        mat = other.mat;
+
+    Matrix(int r, int c) : rows(r), cols(c) {
+        data = new double[rows * cols](); // Initialize all elements to 0 () helps us do this 
     }
 
-    Matrix(Matrix &&other) noexcept : numRows(other.numRows), numCols(other.numCols), mat(move(other.mat)) {
-        other.numRows = nullptr;
-        other.numCols = 0;
+    // 🔹 Copy Constructor (Deep Copy)
+    Matrix(const Matrix& other) : rows(other.rows), cols(other.cols) {
+        cout << "Copy Constructor Called\n";
+        data = new double[rows * cols];
+        for (int i = 0; i < rows * cols; i++) {
+            data[i] = other.data[i];
+        }
     }
 
-    ~Matrix() { delete numRows; }
 
-    int &at(int row, int col) {
-        return mat[row][col];
+    Matrix(Matrix&& other) noexcept : rows(other.rows), cols(other.cols), data(other.data) {
+        cout << "Move Constructor Called\n"; 
+        other.data = nullptr;
+        other.rows = other.cols = 0;
     }
 
-    void fill(int value) {
-        for (int i = 0; i < *numRows; i++)
-            for (int j = 0; j < numCols; j++)
-                mat[i][j] = value;
+    // 🔹 Destructor (Free Memory)
+    ~Matrix() {
+        delete[] data;
     }
 
-    Matrix transpose() {
-        Matrix transposed(numCols, *numRows);
-        for (int i = 0; i < *numRows; i++)
-            for (int j = 0; j < numCols; j++)
-                transposed.mat[j][i] = mat[i][j];
+    // 🔹 Get Row & Column Count
+    int getRows() const { return rows; }
+    int getCols() const { return cols; }
+
+    // 🔹 Access Element at (r, c)
+    double& at(int r, int c) {
+        return data[r * cols + c]; // Row-major access
+    }
+
+    // 🔹 Fill the Matrix with a Value
+    void fill(double value) {
+        for (int i = 0; i < rows * cols; i++) {
+            data[i] = value;
+        }
+    }
+
+    // 🔹 Transpose the Matrix (New Object)
+    Matrix transpose() const {
+        Matrix transposed(cols, rows);
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                transposed.at(c, r) = at(r, c);
+            }
+        }
         return transposed;
     }
 
+    // 🔹 Print Matrix
     void print() const {
-        if (!numRows || *numRows == 0) {
-            cout << "Empty Matrix" << endl;
-            return;
-        }
-        for (int i = 0; i < *numRows; i++) {
-            for (int j = 0; j < numCols; j++) {
-                cout << mat[i][j] << " ";
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                cout << at(r, c) << " ";
             }
             cout << endl;
         }
     }
 };
 
+// 🔹 Main Function to Test
 int main() {
-    Matrix matrix1(3, 3);
-    matrix1.fill(5);
-    matrix1.at(1, 1) = 10;
+    // ✅ Create a Matrix
+    Matrix m(3, 2); // Create a 3x2 matrix
+    m.fill(5.0);    // Fill with 5.0
+    m.at(1, 1) = 10.0; // Modify element
 
-    cout << "Original Matrix:" << endl;
-    matrix1.print();
+    cout << "Original Matrix:\n";
+    m.print();
 
-    Matrix matrix2(matrix1);
-    cout << "Matrix 2 (Copied):" << endl;
-    matrix2.print();
+    // ✅ Copy Constructor Test
+    cout << "\n🔹 Creating a Copy of the Matrix...\n";
+    Matrix copyMatrix = m; // Calls Copy Constructor
+    cout << "Copied Matrix:\n";
+    copyMatrix.print();
 
-    Matrix matrix3 = move(matrix1);
-    cout << "Matrix 3 (Moved):" << endl;
-    matrix3.print();
+    // ✅ Move Constructor Test
+    cout << "\n🔹 Moving a Matrix...\n";
+    Matrix movedMatrix = std::move(m); // Calls Move Constructor
+    cout << "Moved Matrix:\n";
+    movedMatrix.print();
 
-    Matrix transposedMatrix = matrix2.transpose();
-    cout << "Transposed Matrix:" << endl;
-    transposedMatrix.print();
+    cout << "\n🔹 Original Matrix After Move (Should Be Empty):\n";
+    m.print(); // Should print nothing or a 0x0 matrix
 
     return 0;
 }
+
