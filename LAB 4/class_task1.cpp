@@ -12,7 +12,7 @@ public:
 
 
     Matrix(int r, int c) : rows(r), cols(c) {
-        data = new double[rows * cols](); // Initialize all elements to 0 () helps us do this 
+        data = new double[rows * cols](); // Initialize all elements to 0 () ensures that the array is initialized to 0.0 for every element, which is particularly useful when you need a clean starting state for your matrix.
     }
 
     // 🔹 Copy Constructor (Deep Copy)
