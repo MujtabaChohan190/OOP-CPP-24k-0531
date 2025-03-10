@@ -97,7 +97,7 @@ public:
 
 class Library {
 private:
-    Book books[10]; // Maximum 10 books
+    Book books[10]; // Maximum 10 books - vector<Book*> we used  a fixed-size array as it was stated that space was limited , if i wnated flexibile memory , i could use vectors 
     int numBooks;
 
 public:
