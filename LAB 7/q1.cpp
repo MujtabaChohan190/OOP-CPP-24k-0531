@@ -114,7 +114,7 @@ public:
 };
 
 int main() {
-    cout << "***** Banking System Simulation (Using Runtime Polymorphism & DMA) *****\n\n";
+    cout << "Banking System Simulation\n\n";
 
     Account* accounts[3];
     accounts[0] = new SavingsAccount(1001, 5000, "Alice", 4.0, 1000);
