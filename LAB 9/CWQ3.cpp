@@ -1,121 +1,140 @@
 #include <iostream>
 #include <string>
-#include <vector>
-
 using namespace std;
 
-class PatientRecord
-{
+
+class Doctor;
+class Billing;
+
+class PatientRecord {
 private:
     string name;
-    string id;
+    string patientID;
     string dob;
-    vector<string> medicalHistory;
-    vector<string> billingDetails;
+    string* medicalHistory;
+    int medCount;
 
-    void updateMedicalHistory(const string &entry)
-    {
-        medicalHistory.push_back(entry);
+    string* billingRecords;
+    int billingCount;
+
+    void addToMedicalHistory(const string& entry) {
+        string* newHistory = new string[medCount + 1];
+        for (int i = 0; i < medCount; i++) newHistory[i] = medicalHistory[i];
+        newHistory[medCount++] = entry;
+        delete[] medicalHistory;
+        medicalHistory = newHistory;
     }
 
-    void addBillingDetail(const string &entry)
-    {
-        billingDetails.push_back(entry);
+    void addToBilling(const string& bill) {
+        string* newBilling = new string[billingCount + 1];
+        for (int i = 0; i < billingCount; i++) newBilling[i] = billingRecords[i];
+        newBilling[billingCount++] = bill;
+        delete[] billingRecords;
+        billingRecords = newBilling;
     }
 
+public:
+    PatientRecord(string id, string n, string birth) {
+        patientID = id;
+        name = n;
+        dob = birth;
+        medicalHistory = nullptr;
+        billingRecords = nullptr;
+        medCount = billingCount = 0;
+    }
+
+    string getPublicData() const {
+        return "Patient: " + name + " | ID: " + patientID + " | DOB: " + dob;
+    }
+
+    string getMedicalData() const {
+        string result = "Medical History:\n";
+        for (int i = 0; i < medCount; i++) {
+            result += "- " + medicalHistory[i] + "\n";
+        }
+        return result;
+    }
+
+    string getBillingData() const {
+        string result = "Billing Records:\n";
+        for (int i = 0; i < billingCount; i++) {
+            result += "- " + billingRecords[i] + "\n";
+        }
+        return result;
+    }
+
+ 
     friend class Doctor;
     friend class Billing;
 
-public:
-    PatientRecord(const string &n, const string &i, const string &d)
-    {
-        name = n;
-        id = i;
-        dob = d;
-    }
-
-    string getPublicData() const
-    {
-        return "Name: " + name + ", ID: " + id;
-    }
-
-    vector<string> getMedicalData(const string &role) const
-    {
-        if (role == "Doctor") {
-            return medicalHistory;
-        }
-        return {};
-    }
-
-    vector<string> getBillingData(const string &role) const
-    {
-        if (role == "Billing") {
-            return billingDetails;
-        }
-        return {};
+    ~PatientRecord() {
+        delete[] medicalHistory;
+        delete[] billingRecords;
     }
 };
 
-class Doctor
-{
+class Doctor {
 public:
-    void addMedicalNote(PatientRecord &record, const string &note)
-    {
-        record.updateMedicalHistory(note);
+    void addMedicalNote(PatientRecord& patient, const string& note) {
+        patient.addToMedicalHistory("Doctor Note: " + note);
+        cout << "Doctor updated medical history.\n";
     }
 
-    void viewMedicalData(const PatientRecord &record)
-    {
-        vector<string> data = record.getMedicalData("Doctor");
-        for (const string &entry : data) {
-            cout << entry << endl;
-        }
+    void viewMedicalHistory(const PatientRecord& patient) {
+        cout << patient.getMedicalData();
     }
 };
 
-class Billing
-{
+class Billing {
 public:
-    void addBill(PatientRecord &record, const string &entry)
-    {
-        record.addBillingDetail(entry);
+    void addBillingEntry(PatientRecord& patient, const string& entry) {
+        patient.addToBilling("Bill: " + entry);
+        cout << "Billing updated billing records.\n";
     }
 
-    void viewBills(const PatientRecord &record)
-    {
-        vector<string> data = record.getBillingData("Billing");
-        for (const string &entry : data) {
-            cout << entry << endl;
-        }
+    void viewBillingInfo(const PatientRecord& patient) {
+        cout << patient.getBillingData();
     }
 };
 
-class Receptionist
-{
+class Receptionist {
 public:
-    void tryAccess(PatientRecord &record)
-    {
-        cout << record.getPublicData() << endl;
-        vector<string> med = record.getMedicalData("Receptionist");
-        vector<string> bills = record.getBillingData("Receptionist");
-        cout << "Medical entries: " << med.size() << ", Billing entries: " << bills.size() << endl;
+    void viewPublicInfo(const PatientRecord& patient) {
+        cout << patient.getPublicData() << endl;
+    }
+
+    void tryAccessMedical(const PatientRecord& patient) {
+        cout << "Receptionist attempting medical access...\n";
+    
+        cout << "Access Denied!\n";
+    }
+
+    void tryAccessBilling(const PatientRecord& patient) {
+        cout << "Receptionist attempting billing access...\n";
+        
+        cout << "Access Denied!\n";
     }
 };
 
-int main()
-{
-    PatientRecord p("John Doe", "P123", "1990-01-01");
+int main() {
+    PatientRecord p1("P123", "John Doe", "1990-05-15");
 
     Doctor doc;
-    doc.addMedicalNote(p, "Diagnosed with hypertension.");
-    doc.viewMedicalData(p);
-
     Billing bill;
-    bill.addBill(p, "Consultation Fee: $200");
-    bill.viewBills(p);
-
     Receptionist rec;
-    rec.tryAccess(p);
+
+    cout << "\n=== Receptionist Access ===\n";
+    rec.viewPublicInfo(p1);
+    rec.tryAccessMedical(p1);
+    rec.tryAccessBilling(p1);
+
+    cout << "\n=== Doctor Access ===\n";
+    doc.addMedicalNote(p1, "Diagnosed with mild hypertension.");
+    doc.viewMedicalHistory(p1);
+
+    cout << "\n=== Billing Access ===\n";
+    bill.addBillingEntry(p1, "$250 Consultation Fee");
+    bill.viewBillingInfo(p1);
 
     return 0;
 }
