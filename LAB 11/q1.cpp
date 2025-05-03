@@ -1,69 +1,82 @@
 #include <iostream>
 #include <string>
-#include <any>
-#include <unordered_map>
-#include <typeindex>
-#include <exception>
-
+#include <typeinfo>
 using namespace std;
 
-// Custom exception for type mismatch
-class BadTypeException : public exception {
+class BadTypeException {
 public:
-    const char* what() const noexcept override {
-        return "Type mismatch: Requested type does not match stored type.";
-    }
+    string message;
+    BadTypeException(const string& msg) : message(msg) {}
 };
 
-// TypeSafeContainer class
 class TypeSafeContainer {
-private:
-    unordered_map<string, any> data;
+    void* data = nullptr;
+    string typeName;
 
 public:
-    // Store a value of any type
-    template<typename T>
-    void store(const string& key, const T& value) {
-        data[key] = value;
-    }
+    TypeSafeContainer() = default;
 
-    // Retrieve a value safely
-    template<typename T>
-    T get(const string& key) const {
-        auto it = data.find(key);
-        if (it == data.end()) {
-            throw out_of_range("Key not found in container.");
+    // Store value of any supported type
+    template <typename T>
+    void store(const T& value) {
+        if (data) {
+            // Delete based on previous type
+            if (typeName == typeid(int).name()) delete static_cast<int*>(data);
+            else if (typeName == typeid(string).name()) delete static_cast<string*>(data);
+            else if (typeName == typeid(bool).name()) delete static_cast<bool*>(data);
+            else if (typeName == typeid(float).name()) delete static_cast<float*>(data);
+            else if (typeName == typeid(char).name()) delete static_cast<char*>(data);
         }
 
-        try {
-            return any_cast<T>(it->second);
-        } catch (const bad_any_cast&) {
-            throw BadTypeException();
+        data = new T(value);
+        typeName = typeid(T).name();
+    }
+
+    // Retrieve value safely
+    template <typename T>
+    T get() {
+        if (typeid(T).name() != typeName) {
+            throw BadTypeException("Incorrect type requested.");
+        }
+        return *(T*)data; // casts data to T* and returns the dereferenced value *(T*)data.
+    }
+
+    ~TypeSafeContainer() {
+        if (data) {
+            // Delete based on stored type
+            if (typeName == typeid(int).name()) delete static_cast<int*>(data);
+            else if (typeName == typeid(string).name()) delete static_cast<string*>(data);
+            else if (typeName == typeid(bool).name()) delete static_cast<bool*>(data);
+            else if (typeName == typeid(float).name()) delete static_cast<float*>(data);
+            else if (typeName == typeid(char).name()) delete static_cast<char*>(data);
         }
     }
 };
 
 int main() {
-    TypeSafeContainer container;
-
-    // Storing values of different types
-    container.store("age", 30);
-    container.store("name", string("Alice"));
-    container.store("height", 5.9);
-
     try {
-        int age = container.get<int>("age");
-        string name = container.get<string>("name");
-        double height = container.get<double>("height");
+        TypeSafeContainer container;
 
-        cout << "Name: " << name << ", Age: " << age << ", Height: " << height << endl;
+        container.store<int>(123);
+        cout << "Stored int: " << container.get<int>() << endl;
 
-        // This will throw BadTypeException
-        string wrongType = container.get<string>("age");
-        cout << "This won't print: " << wrongType << endl;
+        container.store<string>("Test");
+        cout << "Stored string: " << container.get<string>() << endl;
 
-    } catch (const exception& e) {
-        cout << "Exception: " << e.what() << endl;
+        container.store<bool>(true);
+        cout << "Stored bool: " << (container.get<bool>() ? "true" : "false") << endl;
+
+        container.store<float>(3.14f);
+        cout << "Stored float: " << container.get<float>() << endl;
+
+        container.store<char>('A');
+        cout << "Stored char: " << container.get<char>() << endl;
+
+        // Uncomment to trigger exception:
+        // cout << container.get<int>() << endl;
+
+    } catch (BadTypeException& e) {
+        cout << "Exception: " << e.message << endl;
     }
 
     return 0;
