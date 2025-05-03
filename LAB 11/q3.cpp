@@ -1,56 +1,65 @@
-#include<iostream>
+#include <iostream>
+#include <string>
 using namespace std;
 
-class ArrayOutofBounds : public exception {
-    string str;
+// Custom Exception
+class ArrayIndexOutOfBounds {
+    string message;
 public:
-    ArrayOutofBounds(string s) : str(s) {}
-    const char* what() const noexcept override {
-        return str.c_str();
+    ArrayIndexOutOfBounds(int index, int size) {
+        message = "Index " + to_string(index) + " is out of bounds (size = " + to_string(size) + ")";
+    }
+    string what() const {
+        return message;
     }
 };
 
-template<typename T>
+// Template SafeArray class
+template <typename T>
 class SafeArray {
-    T* array;
+private:
+    T* data;
     int size;
 
 public:
-    SafeArray(int size, T values[]) : size(size) {
-        array = new T[size];
-        for (int i = 0; i < size; i++) {
-            array[i] = values[i];
-        }
+    SafeArray(int s) {
+        size = s;
+        data = new T[size];
     }
 
+    // Destructor
     ~SafeArray() {
-        delete[] array;
+        delete[] data;
     }
 
-    T& operator[](int x) {
-        if (x < 0 || x >= size) throw ArrayOutofBounds("Array out of Bounds!");
-        return array[x];
-    }
-
-    void display() {
-        for (int i = 0; i < size; i++) {
-            cout << array[i] << " ";
+    // Overloaded [] with bounds checking
+    T& operator[](int index) {
+        if (index < 0 || index >= size) {
+            throw ArrayIndexOutOfBounds(index, size);
         }
-        cout << endl;
+        return data[index];
     }
+
+    int getSize() const { return size; }
 };
 
+// Demo in main()
 int main() {
     try {
-        int values[] = {1, 2, 3};
-        SafeArray<int> arr(3, values);
-        cout << "Array contents after initialization: ";
-        arr.display();
-        arr[0] = 10;
-        cout << "arr[0] after modification: " << arr[0] << endl;
+        SafeArray<int> arr(5);
+
+        cout << "Storing values in SafeArray:\n";
+        for (int i = 0; i < arr.getSize(); i++) {
+            arr[i] = (i + 1) * 10;
+            cout << "arr[" << i << "] = " << arr[i] << endl;
+        }
+
+        cout << "\nTrying to access out-of-bounds index:\n";
+        cout << arr[10] << endl; // This should throw exception
+
+    } catch (const ArrayIndexOutOfBounds& ex) {
+        cout << "Exception: " << ex.what() << endl;
     }
-    catch (const ArrayOutofBounds& e) {
-        cout << "Exception: " << e.what() << endl;
-    }
+
     return 0;
 }
