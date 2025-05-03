@@ -1,158 +1,128 @@
 #include <iostream>
-#include <vector>
-#include <exception>
+#include <string>
 using namespace std;
 
-class DimensionMismatch : public exception {
-    string str;
+// Custom exception for dimension mismatch
+class DimensionMismatchException {
 public:
-    DimensionMismatch(string s) : str(s) {}
-    const char* what() const noexcept override {
-        return str.c_str();
-    }
+    string message;
+    DimensionMismatchException(string msg) : message(msg) {}
+    string what() const { return message; }
 };
 
+// Template Matrix class
 template <typename T>
 class Matrix {
-    int rows;
-    int columns;
-    vector<vector<T>> matrix;
+private:
+    int rows, cols;
+    T** data;
 
 public:
-    Matrix() : rows(0), columns(0) {}
-
-    Matrix(int r, int c) : rows(r), columns(c), matrix(r, vector<T>(c, 0)) {
-        Initialize_matrix();
-    }
-
-    void Initialize_matrix() {
-        cout << "Enter values for " << rows << "x" << columns << " matrix:" << endl;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                cin >> matrix[i][j];
-            }
+    Matrix(int r, int c) : rows(r), cols(c) {
+        data = new T*[rows];
+        for (int i = 0; i < rows; ++i) {
+            data[i] = new T[cols];
+            for (int j = 0; j < cols; ++j)
+                data[i][j] = 0;
         }
     }
 
-    void checkBounds(int r, int c) {
-        if (r < 0 || r >= rows || c < 0 || c >= columns)
-            throw out_of_range("Index out of Bounds");
+    // Copy constructor
+    Matrix(const Matrix& other) { 
+// Copy constructor is defined to perform a deep copy.
+// This is necessary because the Matrix class uses dynamic memory (new/delete).
+// Without this, returning a Matrix by value (like in operator+ or operator*) would use a shallow copy,
+// leading to shared pointers and potential memory issues (double deletion, dangling pointers).
+        rows = other.rows;
+        cols = other.cols;
+        data = new T*[rows];
+        for (int i = 0; i < rows; ++i) {
+            data[i] = new T[cols];
+            for (int j = 0; j < cols; ++j)
+                data[i][j] = other.data[i][j];
+        }
     }
 
-    Matrix<T> operator+(Matrix<T>& other) {
-        if (rows != other.rows || columns != other.columns)
-            throw DimensionMismatch("Dimension Mismatch for Addition!");
-        Matrix<T> result(rows, columns);
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                result.matrix[i][j] = matrix[i][j] + other.matrix[i][j];
-            }
-        }
+    // Destructor
+    ~Matrix() {
+        for (int i = 0; i < rows; ++i)
+            delete[] data[i];
+        delete[] data;
+    }
+
+    // Access operator with bounds checking
+    T& operator()(int r, int c) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols)
+            throw DimensionMismatchException("Index out of bounds");
+        return data[r][c];
+    }
+
+    // Addition operator
+    Matrix operator+(const Matrix& other) {
+        if (rows != other.rows || cols != other.cols)
+            throw DimensionMismatchException("Addition: Matrix dimensions must match");
+
+        Matrix result(rows, cols);
+        for (int i = 0; i < rows; ++i)
+            for (int j = 0; j < cols; ++j)
+                result.data[i][j] = data[i][j] + other.data[i][j];
         return result;
     }
 
-    Matrix<T> operator-(Matrix<T>& other) {
-        if (rows != other.rows || columns != other.columns)
-            throw DimensionMismatch("Dimension Mismatch for Subtraction!");
-        Matrix<T> result(rows, columns);
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                result.matrix[i][j] = matrix[i][j] - other.matrix[i][j];
-            }
-        }
+    // Multiplication operator
+    Matrix operator*(const Matrix& other) {
+        if (cols != other.rows)
+            throw DimensionMismatchException("Multiplication: Incompatible matrix dimensions");
+
+        Matrix result(rows, other.cols);
+        for (int i = 0; i < rows; ++i)
+            for (int j = 0; j < other.cols; ++j)
+                for (int k = 0; k < cols; ++k)
+                    result.data[i][j] += data[i][k] * other.data[k][j];
         return result;
     }
 
-    Matrix<T> operator*(Matrix<T>& other) {
-        if (columns != other.rows)
-            throw DimensionMismatch("Dimension Mismatch for Multiplication!");
-        Matrix<T> result(rows, other.columns);
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < other.columns; j++) {
-                result.matrix[i][j] = 0;
-                for (int k = 0; k < columns; k++) {
-                    result.matrix[i][j] += matrix[i][k] * other.matrix[k][j];
-                }
-            }
-        }
-        return result;
-    }
-
+    // Display matrix
     void display() {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
-                cout << matrix[i][j] << " ";
-            }
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j)
+                cout << data[i][j] << " ";
             cout << endl;
         }
     }
 };
 
+// Demo in main
 int main() {
     try {
-        int choice;
-        cout << "Select Operation:\n";
-        cout << "1. Addition (A + B)\n";
-        cout << "2. Subtraction (A - B)\n";
-        cout << "3. Multiplication (A * B)\n";
-        cout << "Enter your choice (1-3): ";
-        cin >> choice;
+        Matrix<int> A(2, 2);
+        Matrix<int> B(2, 2);
 
-        switch (choice) {
-            case 1: {
-                int r1, c1, r2, c2;
-                cout << "Enter number of rows and columns for Matrix A: ";
-                cin >> r1 >> c1;
-                Matrix<int> A(r1, c1);
+        A(0, 0) = 1; A(0, 1) = 2;
+        A(1, 0) = 3; A(1, 1) = 4;
 
-                cout << "Enter number of rows and columns for Matrix B: ";
-                cin >> r2 >> c2;
-                Matrix<int> B(r2, c2);
+        B(0, 0) = 5; B(0, 1) = 6;
+        B(1, 0) = 7; B(1, 1) = 8;
 
-                Matrix<int> C = A + B;
-                cout << "Result of A + B:\n";
-                C.display();
-                break;
-            }
-            case 2: {
-                int r1, c1, r2, c2;
-                cout << "Enter number of rows and columns for Matrix A: ";
-                cin >> r1 >> c1;
-                Matrix<int> A(r1, c1);
+        cout << "Matrix A:\n";
+        A.display();
 
-                cout << "Enter number of rows and columns for Matrix B: ";
-                cin >> r2 >> c2;
-                Matrix<int> B(r2, c2);
+        cout << "\nMatrix B:\n";
+        B.display();
 
-                Matrix<int> C = A - B;
-                cout << "Result of A - B:\n";
-                C.display();
-                break;
-            }
-            case 3: {
-                int r1, c1, r2, c2;
-                cout << "Enter number of rows and columns for Matrix A: ";
-                cin >> r1 >> c1;
-                Matrix<int> A(r1, c1);
+        Matrix<int> C = A + B;
+        cout << "\nA + B:\n";
+        C.display();
 
-                cout << "Enter number of rows and columns for Matrix B: ";
-                cin >> r2 >> c2;
-                Matrix<int> B(r2, c2);
+        Matrix<int> D = A * B;
+        cout << "\nA * B:\n";
+        D.display();
 
-                Matrix<int> C = A * B;
-                cout << "Result of A * B:\n";
-                C.display();
-                break;
-            }
-            default:
-                cout << "Invalid choice!" << endl;
-        }
+        cout << "\nTrying out-of-bounds access:\n";
+        cout << A(10, 10); // Should throw exception
     }
-    catch (const DimensionMismatch& e) {
-        cout << "DimensionMismatch Exception: " << e.what() << endl;
-    }
-    catch (const exception& e) {
-        cout << "Standard Exception: " << e.what() << endl;
+    catch (DimensionMismatchException& e) {
+        cout << "Exception: " << e.what() << endl;
     }
 
     return 0;
